@@ -15,7 +15,7 @@ const CreateUserPage = () => {
         console.log('User created:', user);
       })
       .catch((error) => {
-        console.error('Error creating user:', error);
+        alert('Error creating user:');
       });
   };
 

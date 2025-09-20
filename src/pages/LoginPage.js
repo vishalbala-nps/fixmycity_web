@@ -15,7 +15,7 @@ const LoginPage = () => {
         console.log('User logged in:', user);
       })
       .catch((error) => {
-        console.error('Error logging in:', error);
+        alert('Error logging in:');
       });
   };
 

@@ -9,10 +9,10 @@ const ResetPasswordPage = () => {
   const handleResetPassword = () => {
     sendPasswordResetEmail(auth, emailRef.current.value)
       .then(() => {
-        console.log('Password reset email sent');
+        alert('Password reset email sent');
       })
       .catch((error) => {
-        console.error('Error sending password reset email:', error);
+        alert('Error sending password reset email:');
       });
   };
 
