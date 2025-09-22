@@ -13,12 +13,8 @@ const App = () => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('Auth state changed:', user);
       if (user) {
         setUser(user);
-        user.getIdToken().then((idToken) => {
-          console.log('User ID Token:', idToken);
-        });
       } else {
         setUser(null);
       }
