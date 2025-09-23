@@ -3,12 +3,12 @@ import React, { useRef, useState } from 'react';
 import { auth } from '../firebase';
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { Link } from 'react-router-dom';
-import { Container, Typography, TextField, Button, Grid, AppBar, Toolbar, Switch, FormControlLabel } from '@mui/material';
+import { Container, Typography, TextField, Button, Grid, AppBar, Toolbar, ToggleButton, ToggleButtonGroup } from '@mui/material';
 
 const LoginPage = ({ setUserType }) => {
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [userType, setUserTypeState] = useState('citizen');
 
   const handleLogin = () => {
     signInWithEmailAndPassword(auth, emailRef.current.value, passwordRef.current.value)
@@ -16,11 +16,17 @@ const LoginPage = ({ setUserType }) => {
         // Signed in 
         const user = userCredential.user;
         console.log('User logged in:', user);
-        setUserType(isAdmin ? 'admin' : 'citizen');
+        setUserType(userType);
       })
       .catch((error) => {
         alert('Error logging in:');
       });
+  };
+
+  const handleUserTypeChange = (event, newUserType) => {
+    if (newUserType !== null) {
+      setUserTypeState(newUserType);
+    }
   };
 
   return (
@@ -37,7 +43,24 @@ const LoginPage = ({ setUserType }) => {
           <Typography component="h1" variant="h5">
             Login
           </Typography>
+          <br />
           <form style={{ width: '100%', marginTop: 1 }} noValidate>
+            <ToggleButtonGroup
+              value={userType}
+              exclusive
+              onChange={handleUserTypeChange}
+              aria-label="user type"
+              fullWidth
+              size="small"
+              style={{ marginBottom: 8 }}
+            >
+              <ToggleButton value="citizen" aria-label="citizen">
+                Citizen
+              </ToggleButton>
+              <ToggleButton value="admin" aria-label="admin">
+                Admin
+              </ToggleButton>
+            </ToggleButtonGroup>
             <TextField
               variant="outlined"
               margin="normal"
@@ -61,10 +84,6 @@ const LoginPage = ({ setUserType }) => {
               id="password"
               autoComplete="current-password"
               inputRef={passwordRef}
-            />
-            <FormControlLabel
-              control={<Switch checked={isAdmin} onChange={() => setIsAdmin(!isAdmin)} />}
-              label={isAdmin ? "Admin" : "Citizen"}
             />
             <Button
               type="button"
