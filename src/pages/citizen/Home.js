@@ -10,6 +10,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 import React, { useState, useEffect } from 'react';
+import { getIdToken } from 'firebase/auth';
+import axios from 'axios';
+import { auth } from '../../firebase';
 import { Typography, Box, Button } from '@mui/material';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
@@ -33,17 +36,8 @@ const mapStyle = {
 const Home = () => {
   const defaultCenter = [12.9716, 77.5946]; // Bangalore
   const [position, setPosition] = useState(defaultCenter);
-  // Example: 100 random markers in Chennai area
-  const [markers] = useState(() => {
-    const arr = [];
-    for (let i = 0; i < 100; i++) {
-      arr.push([
-        13.0827 + (Math.random() - 0.5) * 0.2, // Chennai latitude
-        80.2707 + (Math.random() - 0.5) * 0.2, // Chennai longitude
-      ]);
-    }
-    return arr;
-  });
+  // Markers from /api/issue
+  const [markers, setMarkers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,16 +51,40 @@ const Home = () => {
         }
       );
     }
-    // Show loading until GET request completes
-    import('axios').then(({ default: axios }) => {
-      axios.get('https://example.com').then(() => {
+    // Get Firebase idToken and fetch issues
+    function fetchIssues() {
+      const user = auth.currentUser;
+      if (!user) {
         setLoading(false);
-      }).catch(() => {
-        setLoading(false);
-      });
-    });
+        return;
+      }
+      getIdToken(user)
+        .then((idToken) => {
+          return axios.get(process.env.REACT_APP_BACKEND_URL + '/api/issue', {
+            headers: {
+              Authorization: `Bearer ${idToken}`
+            }
+          });
+        })
+        .then((response) => {
+          if (Array.isArray(response.data)) {
+            setMarkers(response.data);
+          }
+        })
+        .catch((err) => {
+          // Optionally handle error
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+    fetchIssues();
   }, []);
 
+
+  // Access the current Firebase user object
+  const user = auth.currentUser;
+  console.log('Firebase user:', user);
   if (loading) {
     return (
       <Box display="flex" alignItems="center" justifyContent="center" height="100vh" width="100vw">
@@ -101,11 +119,17 @@ const Home = () => {
                  You are here
                </Popup>
              </Marker>
-             {/* Clustered markers */}
+             {/* Clustered markers from API */}
              <MarkerClusterGroup>
-               {markers.map((pos, idx) => (
-                 <Marker key={idx} position={pos}>
-                   <Popup>Marker {idx + 1}</Popup>
+               {markers.map((issue, idx) => (
+                 <Marker key={issue.id || idx} position={[issue.lat, issue.lon]}>
+                   <Popup>
+                     <b>{issue.category}</b><br/>
+                     {issue.description}<br/>
+                     <i>{issue.department}</i><br/>
+                     Status: {issue.status}<br/>
+                     Date: {issue.dateofreport}
+                   </Popup>
                  </Marker>
                ))}
              </MarkerClusterGroup>
