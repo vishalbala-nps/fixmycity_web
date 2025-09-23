@@ -1,10 +1,21 @@
+import L from 'leaflet';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+// Fix leaflet's default icon path issue with webpack
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 import React from 'react';
 import { Typography, Box, Button } from '@mui/material';
-import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { MapContainer, TileLayer, Marker,Popup } from 'react-leaflet'
 
-const containerStyle = {
+const mapStyle = {
   width: '100%',
-  height: '75vh', // 75% of viewport height
+  height: '75vh',
   borderRadius: '16px',
   overflow: 'hidden',
   marginBottom: '16px',
@@ -13,16 +24,9 @@ const containerStyle = {
   maxHeight: '80vh',
 };
 
-const center = {
-  lat: 12.9716, // Example: Bangalore
-  lng: 77.5946,
-};
+const center = [12.9716, 77.5946]; // Bangalore
 
 const Home = () => {
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY || '',
-  });
-
   return (
     <Box p={0} m={0} width="100%" height="100vh" minHeight="100vh" maxWidth="100%" overflow="hidden">
       <Box px={3} pt={3} pb={1} display="flex" alignItems="center" justifyContent="space-between">
@@ -37,19 +41,19 @@ const Home = () => {
         <Typography>Welcome to your dashboard!</Typography>
       </Box>
       <Box mt={0} mb={0} position="relative" width="100%" height="75vh">
-        {isLoaded ? (
-          <Box position="relative" width="100%" height="100%">
-            <GoogleMap
-              mapContainerStyle={containerStyle}
-              center={center}
-              zoom={12}
+        <Box position="relative" width="100%" height="100%" sx={mapStyle}>
+          <MapContainer center={center} zoom={12} style={{ width: '100%', height: '100%', borderRadius: '16px' }} scrollWheelZoom={true}>
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-          </Box>
-        ) : (
-          <Box height="100%" width="100%" bgcolor="#e0e0e0" display="flex" alignItems="center" justifyContent="center" borderRadius={2}>
-            <Typography color="textSecondary">Loading map...</Typography>
-          </Box>
-        )}
+            <Marker position={center}>
+              <Popup>
+                You are here (Bangalore)
+              </Popup>
+            </Marker>
+          </MapContainer>
+        </Box>
       </Box>
     </Box>
   );
