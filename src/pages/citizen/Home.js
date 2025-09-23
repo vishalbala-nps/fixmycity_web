@@ -9,9 +9,13 @@ L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
 });
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Typography, Box, Button } from '@mui/material';
-import { MapContainer, TileLayer, Marker,Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+
 
 const mapStyle = {
   width: '100%',
@@ -24,9 +28,53 @@ const mapStyle = {
   maxHeight: '80vh',
 };
 
-const center = [12.9716, 77.5946]; // Bangalore
+
 
 const Home = () => {
+  const defaultCenter = [12.9716, 77.5946]; // Bangalore
+  const [position, setPosition] = useState(defaultCenter);
+  // Example: 100 random markers in Chennai area
+  const [markers] = useState(() => {
+    const arr = [];
+    for (let i = 0; i < 100; i++) {
+      arr.push([
+        13.0827 + (Math.random() - 0.5) * 0.2, // Chennai latitude
+        80.2707 + (Math.random() - 0.5) * 0.2, // Chennai longitude
+      ]);
+    }
+    return arr;
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setPosition([pos.coords.latitude, pos.coords.longitude]);
+        },
+        () => {
+          setPosition(defaultCenter);
+        }
+      );
+    }
+    // Show loading until GET request completes
+    import('axios').then(({ default: axios }) => {
+      axios.get('https://example.com').then(() => {
+        setLoading(false);
+      }).catch(() => {
+        setLoading(false);
+      });
+    });
+  }, []);
+
+  if (loading) {
+    return (
+      <Box display="flex" alignItems="center" justifyContent="center" height="100vh" width="100vw">
+        <Typography variant="h5">Loading...</Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box p={0} m={0} width="100%" height="100vh" minHeight="100vh" maxWidth="100%" overflow="hidden">
       <Box px={3} pt={3} pb={1} display="flex" alignItems="center" justifyContent="space-between">
@@ -42,17 +90,26 @@ const Home = () => {
       </Box>
       <Box mt={0} mb={0} position="relative" width="100%" height="75vh">
         <Box position="relative" width="100%" height="100%" sx={mapStyle}>
-          <MapContainer center={center} zoom={12} style={{ width: '100%', height: '100%', borderRadius: '16px' }} scrollWheelZoom={true}>
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <Marker position={center}>
-              <Popup>
-                You are here (Bangalore)
-              </Popup>
-            </Marker>
-          </MapContainer>
+           <MapContainer center={position} zoom={12} style={{ width: '100%', height: '100%', borderRadius: '16px' }} scrollWheelZoom={true} key={position.join(',')}>
+             <TileLayer
+               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+             />
+             {/* User's current location marker, always visible */}
+             <Marker position={position}>
+               <Popup>
+                 You are here
+               </Popup>
+             </Marker>
+             {/* Clustered markers */}
+             <MarkerClusterGroup>
+               {markers.map((pos, idx) => (
+                 <Marker key={idx} position={pos}>
+                   <Popup>Marker {idx + 1}</Popup>
+                 </Marker>
+               ))}
+             </MarkerClusterGroup>
+           </MapContainer>
         </Box>
       </Box>
     </Box>
