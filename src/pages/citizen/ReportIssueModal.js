@@ -38,6 +38,9 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [fieldsEditable, setFieldsEditable] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [duplicateData, setDuplicateData] = useState(null);
+  const [duplicateReportId, setDuplicateReportId] = useState(null);
 
   const handleUseCurrentLocation = () => {
     setSelectedLocation(currentLocation);
@@ -57,6 +60,8 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
       setErrorMsg('');
       setFieldsEditable(false);
       setLoading(false);
+      setIsDuplicate(false);
+      setDuplicateData(null);
     }
   }, [open, currentLocation]);
 
@@ -65,6 +70,8 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
     const file = e.target.files[0];
     setImage(file);
     setFieldsEditable(true);
+    setIsDuplicate(false); // reset duplicate state
+    setDuplicateData(null); // reset duplicate data
     // Only proceed if file and selectedLocation are available
     if (file && selectedLocation) {
       setLoading(true);
@@ -95,6 +102,8 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
           if (res.data.description) setDescription(res.data.description);
           if (res.data.category) setCategory(res.data.category);
           if (res.data.department) setDepartment(res.data.department);
+          if (res.data.duplicate !== undefined) setIsDuplicate(res.data.duplicate);
+          if (res.data.duplicate && res.data.report) setDuplicateReportId(res.data.report);
         }
       }).catch((err) => {
         setErrorMsg('Failed to process image. Please try again.');
@@ -114,18 +123,24 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
       return;
     }
     getIdToken(user).then((idToken) => {
-      // Use the image from previous request (should be a filename or id from backend)
-      // If you want to use the uploaded file's name, you may need to store it from the summary response
-      // Here, we assume the backend returns the image name/id in the summary response and we store it in imageName
-      const payload = {
-        duplicate: false,
-        image: image && image.name ? image.name : '',
-        description,
-        category,
-        department,
-        lat: selectedLocation ? selectedLocation[0] : '',
-        lon: selectedLocation ? selectedLocation[1] : ''
-      };
+      let payload;
+      if (isDuplicate) {
+        payload = {
+          duplicate: true,
+          image: image && image.name ? image.name : '',
+          report: duplicateReportId || '',
+        };
+      } else {
+        payload = {
+          duplicate: false,
+          image: image && image.name ? image.name : '',
+          description,
+          category,
+          department,
+          lat: selectedLocation ? selectedLocation[0] : '',
+          lon: selectedLocation ? selectedLocation[1] : ''
+        };
+      }
       return axios.post(
         process.env.REACT_APP_BACKEND_URL + '/api/issue',
         payload,
@@ -144,7 +159,6 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
       setLoading(false);
     });
   };
-
   return (
     <Modal open={open} onClose={onClose}>
       <Box sx={{ ...modalStyle, p: { xs: 2, sm: 4 } }}>
@@ -158,88 +172,128 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
           </Box>
         )}
         {!loading && <>
-        {errorMsg && (
+        {isDuplicate ? (
           <Box mb={2}>
-            <Typography color="error" align="center">{errorMsg}</Typography>
+            <Typography color="warning.main" align="center" fontWeight={700} fontSize={22} mb={2}>
+              Duplicate Issue Detected
+            </Typography>
+            <Typography align="center" color="text.secondary" fontSize={16} mb={2}>
+              This issue may have already been reported. Please review the details below:
+            </Typography>
+            <Box display="flex" flexDirection="column" alignItems="center" mt={1}>
+              {image && typeof image === 'object' && image instanceof File && (
+                <img
+                  src={URL.createObjectURL(image)}
+                  alt="Duplicate Issue"
+                  style={{ maxWidth: 260, maxHeight: 200, borderRadius: 10, marginBottom: 16, border: '2px solid #ffa726', boxShadow: '0 2px 12px #ffecb3' }}
+                />
+              )}
+              <Typography variant="h6" fontWeight={600} color="warning.dark" mb={1}>
+                Description
+              </Typography>
+              <Typography fontSize={17} mb={1} color="text.primary" align="center">{description}</Typography>
+              <Typography variant="h6" fontWeight={600} color="warning.dark" mb={1}>
+                Category
+              </Typography>
+              <Typography fontSize={17} mb={1} color="text.primary">{category}</Typography>
+              <Typography variant="h6" fontWeight={600} color="warning.dark" mb={1}>
+                Department
+              </Typography>
+              <Typography fontSize={17} color="text.primary">{department}</Typography>
+            </Box>
+            <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
+              <Button onClick={onClose}>Close</Button>
+              <Button variant="contained" onClick={handleSubmit} disabled={!selectedLocation || !description}>
+                Submit
+              </Button>
+            </Box>
           </Box>
+        ) : (
+          <>
+            {errorMsg && (
+              <Box mb={2}>
+                <Typography color="error" align="center">{errorMsg}</Typography>
+              </Box>
+            )}
+            <Box mb={3} display="flex" flexDirection="column" alignItems="center">
+              <Button
+                variant="contained"
+                component="label"
+                sx={{
+                  bgcolor: '#1976d2',
+                  color: 'white',
+                  fontWeight: 500,
+                  px: 3,
+                  py: 1.5,
+                  borderRadius: 2,
+                  fontSize: 16,
+                  boxShadow: 2,
+                  mb: 1
+                }}
+              >
+                Upload Image
+                <input type="file" hidden onChange={handleImageChange} />
+              </Button>
+              {image && <Typography mt={1} color="text.secondary">{image.name}</Typography>}
+            </Box>
+            <Box mb={3}>
+              <Button variant="outlined" onClick={handleUseCurrentLocation} disabled={!currentLocation} sx={{ mb: 1 }}>
+                Use Current Location
+              </Button>
+              <MapContainer
+                center={selectedLocation || currentLocation || [12.9716, 77.5946]}
+                zoom={13}
+                style={{ width: '100%', height: 300, borderRadius: 8 }}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <LocationSelector value={selectedLocation} onChange={setSelectedLocation} />
+              </MapContainer>
+            </Box>
+            <Box mb={2}>
+              <TextField
+                label="Description"
+                multiline
+                rows={3}
+                fullWidth
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                sx={{ background: '#f5f5f5', borderRadius: 1 }}
+                disabled={!fieldsEditable}
+              />
+            </Box>
+            <Box mb={2} display="flex" gap={2}>
+              <FormControl fullWidth disabled={!fieldsEditable}>
+                <InputLabel>Category</InputLabel>
+                <Select value={category} label="Category" onChange={e => setCategory(e.target.value)}>
+                  <MenuItem value="Pothole">Pothole</MenuItem>
+                  <MenuItem value="Streetlight">Streetlight</MenuItem>
+                  <MenuItem value="Garbage">Garbage</MenuItem>
+                  <MenuItem value="Water Stagnation">Water Stagnation</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl fullWidth disabled={!fieldsEditable}>
+                <InputLabel>Department</InputLabel>
+                <Select value={department} label="Department" onChange={e => setDepartment(e.target.value)}>
+                  <MenuItem value="Department of Drinking Water and Sanitation">Department of Drinking Water and Sanitation</MenuItem>
+                  <MenuItem value="Department of Rural Works">Department of Rural Works</MenuItem>
+                  <MenuItem value="Department of Road Construction">Department of Road Construction</MenuItem>
+                  <MenuItem value="Department of Energy">Department of Energy</MenuItem>
+                  <MenuItem value="Department of Health, Medical Education & Family Welfare">Department of Health, Medical Education & Family Welfare</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+            <Box display="flex" justifyContent="flex-end" gap={2}>
+              <Button onClick={onClose}>Cancel</Button>
+              <Button variant="contained" onClick={handleSubmit} disabled={!selectedLocation || !description}>
+                Submit
+              </Button>
+            </Box>
+          </>
         )}
-        <Box mb={3} display="flex" flexDirection="column" alignItems="center">
-          <Button
-            variant="contained"
-            component="label"
-            sx={{
-              bgcolor: '#1976d2',
-              color: 'white',
-              fontWeight: 500,
-              px: 3,
-              py: 1.5,
-              borderRadius: 2,
-              fontSize: 16,
-              boxShadow: 2,
-              mb: 1
-            }}
-          >
-            Upload Image
-            <input type="file" hidden onChange={handleImageChange} />
-          </Button>
-          {image && <Typography mt={1} color="text.secondary">{image.name}</Typography>}
-        </Box>
-        <Box mb={3}>
-          <Button variant="outlined" onClick={handleUseCurrentLocation} disabled={!currentLocation} sx={{ mb: 1 }}>
-            Use Current Location
-          </Button>
-          <MapContainer
-            center={selectedLocation || currentLocation || [12.9716, 77.5946]}
-            zoom={13}
-            style={{ width: '100%', height: 300, borderRadius: 8 }}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <LocationSelector value={selectedLocation} onChange={setSelectedLocation} />
-          </MapContainer>
-        </Box>
-        <Box mb={2}>
-          <TextField
-            label="Description"
-            multiline
-            rows={3}
-            fullWidth
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            sx={{ background: '#f5f5f5', borderRadius: 1 }}
-            disabled={!fieldsEditable}
-          />
-        </Box>
-        <Box mb={2} display="flex" gap={2}>
-          <FormControl fullWidth disabled={!fieldsEditable}>
-            <InputLabel>Category</InputLabel>
-            <Select value={category} label="Category" onChange={e => setCategory(e.target.value)}>
-              <MenuItem value="Pothole">Pothole</MenuItem>
-              <MenuItem value="Streetlight">Streetlight</MenuItem>
-              <MenuItem value="Garbage">Garbage</MenuItem>
-              <MenuItem value="Water Stagnation">Water Stagnation</MenuItem>
-              <MenuItem value="Other">Other</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl fullWidth disabled={!fieldsEditable}>
-            <InputLabel>Department</InputLabel>
-            <Select value={department} label="Department" onChange={e => setDepartment(e.target.value)}>
-              <MenuItem value="Department of Drinking Water and Sanitation">Department of Drinking Water and Sanitation</MenuItem>
-              <MenuItem value="Department of Rural Works">Department of Rural Works</MenuItem>
-              <MenuItem value="Department of Road Construction">Department of Road Construction</MenuItem>
-              <MenuItem value="Department of Energy">Department of Energy</MenuItem>
-              <MenuItem value="Department of Health, Medical Education & Family Welfare">Department of Health, Medical Education & Family Welfare</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-        <Box display="flex" justifyContent="flex-end" gap={2}>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleSubmit} disabled={!selectedLocation || !description}>
-            Submit
-          </Button>
-        </Box>
         </>}
       </Box>
     </Modal>
