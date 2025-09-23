@@ -26,7 +26,7 @@ function LocationSelector({ value, onChange }) {
 }
 
 const ReportIssueModal = ({ open, onClose, currentLocation }) => {
-  const [selectedLocation, setSelectedLocation] = useState(currentLocation || null);
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const [description, setDescription] = useState('');
   const [image, setImage] = useState(null);
   const [category] = useState('Pothole');
@@ -35,6 +35,16 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
   const handleUseCurrentLocation = () => {
     setSelectedLocation(currentLocation);
   };
+
+  // When modal opens, set selectedLocation to currentLocation
+  React.useEffect(() => {
+    if (open && currentLocation) {
+      setSelectedLocation(currentLocation);
+    }
+    if (!open) {
+      setSelectedLocation(null);
+    }
+  }, [open, currentLocation]);
 
   const handleImageChange = (e) => {
     setImage(e.target.files[0]);
