@@ -8,7 +8,7 @@ import CreateUserPage from './pages/CreateUserPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminPage from './pages/AdminPage';
 import CitizenPage from './pages/CitizenPage';
-
+import axios from 'axios';
 const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,8 +18,23 @@ const App = () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         const usertype = localStorage.getItem('type');
-        setUserType(usertype);
-        setUser(user);
+        if (usertype === "admin") {
+          axios.post(process.env.REACT_APP_BACKEND_URL+"/api/admin/auth",{idToken:user.accessToken}).then((res) => {
+              setUserType(usertype);
+              setUser(user);
+              localStorage.setItem('admintoken', res.data.token);
+          }).catch((err) => {
+            setUser(null);
+            setUserType(null);
+            localStorage.removeItem('type');
+            auth.signOut();
+            alert("Failed to Signin as Admin");
+          });
+        } else {
+          setUserType(usertype);
+          setUser(user);
+        }
+        console.log(user.accessToken);
       } else {
         setUser(null);
         setUserType(null);
