@@ -97,6 +97,35 @@ const Home = () => {
     );
   }
 
+  // Add a function to refresh issues
+  const refreshIssues = () => {
+    setLoading(true);
+    const user = auth.currentUser;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    getIdToken(user)
+      .then((idToken) => {
+        return axios.get(process.env.REACT_APP_BACKEND_URL + '/api/issue', {
+          headers: {
+            Authorization: `Bearer ${idToken}`
+          }
+        });
+      })
+      .then((response) => {
+        if (Array.isArray(response.data)) {
+          setMarkers(response.data);
+        }
+      })
+      .catch((err) => {
+        // Optionally handle error
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
   return (
     <Box p={0} m={0} width="100%" height="100vh" minHeight="100vh" maxWidth="100%" overflow="hidden">
       <Box px={3} pt={3} pb={1} display="flex" alignItems="center" justifyContent="space-between">
@@ -107,7 +136,7 @@ const Home = () => {
           Report an Issue
         </Button>
       </Box>
-    <ReportIssueModal open={modalOpen} onClose={() => setModalOpen(false)} currentLocation={position} />
+    <ReportIssueModal open={modalOpen} onClose={() => setModalOpen(false)} currentLocation={position} onIssueSubmitted={refreshIssues} />
       <Box px={3} pb={1}>
         <Typography>Welcome to your dashboard!</Typography>
       </Box>

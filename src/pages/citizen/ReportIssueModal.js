@@ -29,7 +29,7 @@ function LocationSelector({ value, onChange }) {
   return value ? <Marker position={value} /> : null;
 }
 
-const ReportIssueModal = ({ open, onClose, currentLocation }) => {
+const ReportIssueModal = ({ open, onClose, currentLocation, onIssueSubmitted }) => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [description, setDescription] = useState('');
   const [image, setImage] = useState(null);
@@ -153,6 +153,7 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
         }
       );
     }).then(() => {
+      if (onIssueSubmitted) onIssueSubmitted();
       onClose();
     }).catch(() => {
       setErrorMsg('Failed to submit issue. Please try again.');
