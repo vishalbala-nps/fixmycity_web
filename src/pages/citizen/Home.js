@@ -20,6 +20,7 @@ import { submittedIcon, inProgressIcon, completeIcon } from './statusIcons';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import dayjs from 'dayjs';
 
 
 const mapStyle = {
@@ -135,16 +136,30 @@ const Home = () => {
              <MarkerClusterGroup>
                {markers.map((issue, idx) => {
                  let icon = submittedIcon;
+                 console.log(issue)
                  if (issue.status === 'in progress') icon = inProgressIcon;
                  else if (issue.status === 'complete') icon = completeIcon;
                  return (
                    <Marker key={issue.id || idx} position={[issue.lat, issue.lon]} icon={icon}>
                      <Popup>
-                       <b>{issue.category}</b><br/>
-                       {issue.description}<br/>
-                       <i>{issue.department}</i><br/>
-                       Status: {issue.status}<br/>
-                       Date: {issue.dateofreport}
+                       {issue.images[0] && (
+                         <img
+                           src={`${process.env.REACT_APP_BACKEND_URL}/api/image/${issue.image}`}
+                           alt="Issue"
+                           style={{ maxWidth: 180, maxHeight: 120, borderRadius: 6, marginTop: 8 }}
+                         />
+                       )}
+                       <br />
+                       <b>Category:</b> {issue.category}<br/>
+                       <b>Description:</b> {issue.description}<br/>
+                       <b>Department:</b> {issue.department}<br/>
+                       <b>Status:</b> {issue.status === 'submitted' ? 'Submitted' : issue.status === 'in progress' ? 'In Progress' : issue.status === 'complete' ? 'Complete' : issue.status}<br/>
+                       <b>Date:</b> {issue.dateofreport ? dayjs(issue.dateofreport).format('DD MMM YYYY') : ''}<br/>
+                       {issue.count !== undefined && (
+                         <>
+                           <b>Reported By:</b> {issue.count} people<br/>
+                         </>
+                       )}
                      </Popup>
                    </Marker>
                  );
