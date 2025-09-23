@@ -17,10 +17,13 @@ const App = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
+        const usertype = localStorage.getItem('type');
+        setUserType(usertype);
         setUser(user);
       } else {
         setUser(null);
         setUserType(null);
+        localStorage.removeItem('type');
       }
       setLoading(false);
     });

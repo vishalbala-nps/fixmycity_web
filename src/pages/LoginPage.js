@@ -9,7 +9,9 @@ const LoginPage = ({ setUserType }) => {
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
   const [userType, setUserTypeState] = useState('citizen');
-
+  React.useEffect(function() {
+    localStorage.setItem('type', userType);
+  },[userType]);
   const handleLogin = () => {
     signInWithEmailAndPassword(auth, emailRef.current.value, passwordRef.current.value)
       .then((userCredential) => {
