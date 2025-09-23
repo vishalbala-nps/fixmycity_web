@@ -15,7 +15,8 @@ import axios from 'axios';
 import { auth } from '../../firebase';
 import { Typography, Box, Button, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import ReportIssueModal from './ReportIssueModal';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import { submittedIcon, inProgressIcon, completeIcon } from './statusIcons';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
@@ -116,25 +117,38 @@ const Home = () => {
                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
              />
-             {/* User's current location marker, always visible */}
-             <Marker position={position}>
-               <Popup>
-                 You are here
-               </Popup>
-             </Marker>
+             {/* User's current location as a blue circle */}
+             <Circle
+               center={position}
+               radius={70}
+               pathOptions={{
+                 color: '#1976d2',
+                 fillColor: '#1976d2',
+                 fillOpacity: 0.7,
+                 weight: 5,
+                 opacity: 1,
+                 dashArray: '2',
+                 className: 'user-location-glow'
+               }}
+             />
              {/* Clustered markers from API */}
              <MarkerClusterGroup>
-               {markers.map((issue, idx) => (
-                 <Marker key={issue.id || idx} position={[issue.lat, issue.lon]}>
-                   <Popup>
-                     <b>{issue.category}</b><br/>
-                     {issue.description}<br/>
-                     <i>{issue.department}</i><br/>
-                     Status: {issue.status}<br/>
-                     Date: {issue.dateofreport}
-                   </Popup>
-                 </Marker>
-               ))}
+               {markers.map((issue, idx) => {
+                 let icon = submittedIcon;
+                 if (issue.status === 'in progress') icon = inProgressIcon;
+                 else if (issue.status === 'complete') icon = completeIcon;
+                 return (
+                   <Marker key={issue.id || idx} position={[issue.lat, issue.lon]} icon={icon}>
+                     <Popup>
+                       <b>{issue.category}</b><br/>
+                       {issue.description}<br/>
+                       <i>{issue.department}</i><br/>
+                       Status: {issue.status}<br/>
+                       Date: {issue.dateofreport}
+                     </Popup>
+                   </Marker>
+                 );
+               })}
              </MarkerClusterGroup>
            </MapContainer>
         </Box>

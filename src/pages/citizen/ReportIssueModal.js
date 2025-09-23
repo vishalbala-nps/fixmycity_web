@@ -105,8 +105,44 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
   };
 
   const handleSubmit = () => {
-    // Submit logic here
-    onClose();
+    setErrorMsg("");
+    setLoading(true);
+    const user = auth.currentUser;
+    if (!user) {
+      setErrorMsg("You must be logged in to submit an issue.");
+      setLoading(false);
+      return;
+    }
+    getIdToken(user).then((idToken) => {
+      // Use the image from previous request (should be a filename or id from backend)
+      // If you want to use the uploaded file's name, you may need to store it from the summary response
+      // Here, we assume the backend returns the image name/id in the summary response and we store it in imageName
+      const payload = {
+        duplicate: false,
+        image: image && image.name ? image.name : '',
+        description,
+        category,
+        department,
+        lat: selectedLocation ? selectedLocation[0] : '',
+        lon: selectedLocation ? selectedLocation[1] : ''
+      };
+      return axios.post(
+        process.env.REACT_APP_BACKEND_URL + '/api/issue',
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+    }).then(() => {
+      onClose();
+    }).catch(() => {
+      setErrorMsg('Failed to submit issue. Please try again.');
+    }).finally(() => {
+      setLoading(false);
+    });
   };
 
   return (
