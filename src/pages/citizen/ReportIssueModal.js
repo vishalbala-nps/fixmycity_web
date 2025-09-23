@@ -39,8 +39,9 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
   const [fieldsEditable, setFieldsEditable] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isDuplicate, setIsDuplicate] = useState(false);
-  const [duplicateData, setDuplicateData] = useState(null);
   const [duplicateReportId, setDuplicateReportId] = useState(null);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  
 
   const handleUseCurrentLocation = () => {
     setSelectedLocation(currentLocation);
@@ -61,7 +62,7 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
       setFieldsEditable(false);
       setLoading(false);
       setIsDuplicate(false);
-      setDuplicateData(null);
+      setDuplicateReportId(null);
     }
   }, [open, currentLocation]);
 
@@ -71,7 +72,6 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
     setImage(file);
     setFieldsEditable(true);
     setIsDuplicate(false); // reset duplicate state
-    setDuplicateData(null); // reset duplicate data
     // Only proceed if file and selectedLocation are available
     if (file && selectedLocation) {
       setLoading(true);
@@ -103,6 +103,7 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
           if (res.data.category) setCategory(res.data.category);
           if (res.data.department) setDepartment(res.data.department);
           if (res.data.duplicate !== undefined) setIsDuplicate(res.data.duplicate);
+          if (res.data.image) setUploadedImage(res.data.image);
           if (res.data.duplicate && res.data.report) setDuplicateReportId(res.data.report);
         }
       }).catch((err) => {
@@ -127,13 +128,13 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
       if (isDuplicate) {
         payload = {
           duplicate: true,
-          image: image && image.name ? image.name : '',
+          image: uploadedImage,
           report: duplicateReportId || '',
         };
       } else {
         payload = {
           duplicate: false,
-          image: image && image.name ? image.name : '',
+          image: uploadedImage,
           description,
           category,
           department,
@@ -183,7 +184,7 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
             <Box display="flex" flexDirection="column" alignItems="center" mt={1}>
               {image && typeof image === 'object' && image instanceof File && (
                 <img
-                  src={URL.createObjectURL(image)}
+                  src={process.env.REACT_APP_BACKEND_URL+"/api/image/"+uploadedImage}
                   alt="Duplicate Issue"
                   style={{ maxWidth: 260, maxHeight: 200, borderRadius: 10, marginBottom: 16, border: '2px solid #ffa726', boxShadow: '0 2px 12px #ffecb3' }}
                 />
@@ -242,7 +243,7 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
               </Button>
               <MapContainer
                 center={selectedLocation || currentLocation || [12.9716, 77.5946]}
-                zoom={13}
+                zoom={16}
                 style={{ width: '100%', height: 300, borderRadius: 8 }}
               >
                 <TileLayer

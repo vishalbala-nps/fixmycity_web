@@ -144,7 +144,7 @@ const Home = () => {
                      <Popup>
                        {issue.images[0] && (
                          <img
-                           src={`${process.env.REACT_APP_BACKEND_URL}/api/image/${issue.image}`}
+                           src={`${process.env.REACT_APP_BACKEND_URL}/api/image/${issue.images[0]}`}
                            alt="Issue"
                            style={{ maxWidth: 180, maxHeight: 120, borderRadius: 6, marginTop: 8 }}
                          />
