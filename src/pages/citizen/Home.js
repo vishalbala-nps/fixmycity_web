@@ -13,7 +13,8 @@ import React, { useState, useEffect } from 'react';
 import { getIdToken } from 'firebase/auth';
 import axios from 'axios';
 import { auth } from '../../firebase';
-import { Typography, Box, Button } from '@mui/material';
+import { Typography, Box, Button, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import ReportIssueModal from './ReportIssueModal';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -36,6 +37,7 @@ const mapStyle = {
 const Home = () => {
   const defaultCenter = [12.9716, 77.5946]; // Bangalore
   const [position, setPosition] = useState(defaultCenter);
+  const [modalOpen, setModalOpen] = useState(false);
   // Markers from /api/issue
   const [markers, setMarkers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,10 +101,11 @@ const Home = () => {
         <Box display="flex" alignItems="center">
           <Typography variant="h4">Citizen Home</Typography>
         </Box>
-        <Button variant="contained" color="primary" sx={{ ml: 2 }}>
+          <Button variant="contained" color="primary" sx={{ ml: 2 }} onClick={() => setModalOpen(true)}>
           Report an Issue
         </Button>
       </Box>
+    <ReportIssueModal open={modalOpen} onClose={() => setModalOpen(false)} currentLocation={position} />
       <Box px={3} pb={1}>
         <Typography>Welcome to your dashboard!</Typography>
       </Box>
