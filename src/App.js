@@ -6,10 +6,13 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import CreateUserPage from './pages/CreateUserPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import AdminPage from './pages/AdminPage';
+import CitizenPage from './pages/CitizenPage';
 
 const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userType, setUserType] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -17,6 +20,7 @@ const App = () => {
         setUser(user);
       } else {
         setUser(null);
+        setUserType(null);
       }
       setLoading(false);
     });
@@ -30,12 +34,14 @@ const App = () => {
   return (
     <Routes>
       <Route 
-        path="/" 
-        element={user ? <HomePage user={user} /> : <Navigate to="/login" />}
+        path="/"
+        element={user ? (userType === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/citizen" />) : <Navigate to="/login" />}
       />
-      <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage />} />
+      <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage setUserType={setUserType} />} />
       <Route path="/create-user" element={user ? <Navigate to="/" /> : <CreateUserPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/admin" element={user ? <AdminPage /> : <Navigate to="/login" />} />
+      <Route path="/citizen" element={user ? <CitizenPage /> : <Navigate to="/login" />} />
     </Routes>
   );
 };

@@ -1,37 +1,42 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { auth } from '../firebase';
 import { signOut } from "firebase/auth";
+import { AppBar, Toolbar, Typography, Button } from '@mui/material';
 
 const HomePage = ({ user }) => {
-  const [idToken, setIdToken] = useState(null);
 
   const handleLogout = () => {
     signOut(auth).then(() => {
-      console.log('User logged out');
+      // Sign-out successful.
     }).catch((error) => {
-      console.error('Error logging out:', error);
+      // An error happened.
+      console.error('Logout Error:', error);
     });
   };
 
   const handleGetIdToken = () => {
-    user.getIdToken().then((token) => {
-      console.log("token")
-      setIdToken(token);
+    auth.currentUser.getIdToken(/* forceRefresh */ true).then(function(idToken) {
+      console.log('ID Token:', idToken);
+    }).catch(function(error) {
+      console.error('Error getting ID token:', error);
     });
   };
 
   return (
     <div>
-      <h2>Welcome, {user.email}</h2>
-      <button onClick={handleLogout}>Log Out</button>
-      <br />
-      <button onClick={handleGetIdToken}>Get ID Token</button>
-      {idToken && (
-        <div>
-          <h3>ID Token:</h3>
-          <p>{idToken}</p>
-        </div>
-      )}
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            FixMyCity
+          </Typography>
+          <Button color="inherit" onClick={handleLogout}>Logout</Button>
+        </Toolbar>
+      </AppBar>
+      <div style={{ padding: '20px' }}>
+        <h1>Welcome, {user.email}</h1>
+        <button onClick={handleGetIdToken}>Get ID Token</button>
+      </div>
     </div>
   );
 };
