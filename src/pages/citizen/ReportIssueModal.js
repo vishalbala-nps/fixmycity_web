@@ -50,6 +50,13 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
     }
     if (!open) {
       setSelectedLocation(null);
+      setDescription('');
+      setImage(null);
+      setCategory('Pothole');
+      setDepartment('Department of Drinking Water and Sanitation');
+      setErrorMsg('');
+      setFieldsEditable(false);
+      setLoading(false);
     }
   }, [open, currentLocation]);
 
