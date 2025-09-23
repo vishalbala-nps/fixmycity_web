@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+import CircularProgress from '@mui/material/CircularProgress';
+import { getIdToken } from 'firebase/auth';
+import { auth } from '../../firebase';
+import axios from 'axios';
 import { Box, Modal, Typography, Button, TextField, MenuItem, FormControl, InputLabel, Select } from '@mui/material';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 
@@ -29,8 +33,11 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [description, setDescription] = useState('');
   const [image, setImage] = useState(null);
-  const [category] = useState('Pothole');
-  const [department] = useState('Department of Drinking Water and Sanitation');
+  const [category, setCategory] = useState('Pothole');
+  const [department, setDepartment] = useState('Department of Drinking Water and Sanitation');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [fieldsEditable, setFieldsEditable] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleUseCurrentLocation = () => {
     setSelectedLocation(currentLocation);
@@ -47,7 +54,47 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
   }, [open, currentLocation]);
 
   const handleImageChange = (e) => {
-    setImage(e.target.files[0]);
+    setErrorMsg('');
+    const file = e.target.files[0];
+    setImage(file);
+    setFieldsEditable(true);
+    // Only proceed if file and selectedLocation are available
+    if (file && selectedLocation) {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('lat', selectedLocation[0]);
+      formData.append('lon', selectedLocation[1]);
+      const user = auth.currentUser;
+      if (!user) {
+        setErrorMsg('You must be logged in to upload an image.');
+        setLoading(false);
+        return;
+      }
+      getIdToken(user).then((idToken) => {
+        return axios.post(
+          process.env.REACT_APP_BACKEND_URL + '/api/issue/summary',
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: `Bearer ${idToken}`
+            }
+          }
+        );
+      }).then((res) => {
+        // Update description, category, department from response if present
+        if (res && res.data) {
+          if (res.data.description) setDescription(res.data.description);
+          if (res.data.category) setCategory(res.data.category);
+          if (res.data.department) setDepartment(res.data.department);
+        }
+      }).catch((err) => {
+        setErrorMsg('Failed to process image. Please try again.');
+      }).finally(() => {
+        setLoading(false);
+      });
+    }
   };
 
   const handleSubmit = () => {
@@ -61,6 +108,18 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
         <Typography variant="h5" mb={3} align="center" fontWeight={600} letterSpacing={1}>
           Report an Issue
         </Typography>
+        {loading && (
+          <Box mb={3} display="flex" flexDirection="column" alignItems="center" justifyContent="center">
+            <CircularProgress />
+            <Typography mt={2}>Processing image...</Typography>
+          </Box>
+        )}
+        {!loading && <>
+        {errorMsg && (
+          <Box mb={2}>
+            <Typography color="error" align="center">{errorMsg}</Typography>
+          </Box>
+        )}
         <Box mb={3} display="flex" flexDirection="column" alignItems="center">
           <Button
             variant="contained"
@@ -107,13 +166,13 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
             value={description}
             onChange={e => setDescription(e.target.value)}
             sx={{ background: '#f5f5f5', borderRadius: 1 }}
-            disabled
+            disabled={!fieldsEditable}
           />
         </Box>
         <Box mb={2} display="flex" gap={2}>
-          <FormControl fullWidth disabled>
+          <FormControl fullWidth disabled={!fieldsEditable}>
             <InputLabel>Category</InputLabel>
-            <Select value={category} label="Category">
+            <Select value={category} label="Category" onChange={e => setCategory(e.target.value)}>
               <MenuItem value="Pothole">Pothole</MenuItem>
               <MenuItem value="Streetlight">Streetlight</MenuItem>
               <MenuItem value="Garbage">Garbage</MenuItem>
@@ -121,9 +180,9 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
               <MenuItem value="Other">Other</MenuItem>
             </Select>
           </FormControl>
-          <FormControl fullWidth disabled>
+          <FormControl fullWidth disabled={!fieldsEditable}>
             <InputLabel>Department</InputLabel>
-            <Select value={department} label="Department">
+            <Select value={department} label="Department" onChange={e => setDepartment(e.target.value)}>
               <MenuItem value="Department of Drinking Water and Sanitation">Department of Drinking Water and Sanitation</MenuItem>
               <MenuItem value="Department of Rural Works">Department of Rural Works</MenuItem>
               <MenuItem value="Department of Road Construction">Department of Road Construction</MenuItem>
@@ -138,6 +197,7 @@ const ReportIssueModal = ({ open, onClose, currentLocation }) => {
             Submit
           </Button>
         </Box>
+        </>}
       </Box>
     </Modal>
   );
