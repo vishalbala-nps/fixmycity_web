@@ -10,9 +10,8 @@ import AdminPage from './pages/AdminPage';
 import CitizenPage from './pages/CitizenPage';
 import axios from 'axios';
 const App = () => {
-  const [user, setUser] = useState(null);
+  const [userState, setUserState] = useState({ user: null, userType: null });
   const [loading, setLoading] = useState(true);
-  const [userType, setUserType] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -20,24 +19,20 @@ const App = () => {
         const usertype = localStorage.getItem('type');
         if (usertype === "admin") {
           axios.post(process.env.REACT_APP_BACKEND_URL+"/api/admin/auth",{idToken:user.accessToken}).then((res) => {
-              setUserType(usertype);
-              setUser(user);
+              setUserState({ user, userType: usertype });
               localStorage.setItem('admintoken', res.data.token);
           }).catch((err) => {
-            setUser(null);
-            setUserType(null);
+            setUserState({ user: null, userType: null });
             localStorage.removeItem('type');
             auth.signOut();
             alert("Failed to Signin as Admin");
           });
         } else {
-          setUserType(usertype);
-          setUser(user);
+          setUserState({ user, userType: usertype });
         }
         console.log(user.accessToken);
       } else {
-        setUser(null);
-        setUserType(null);
+        setUserState({ user: null, userType: null });
         localStorage.removeItem('type');
       }
       setLoading(false);
@@ -49,13 +44,14 @@ const App = () => {
     return <div>Loading...</div>;
   }
 
+  const { user, userType } = userState;
   return (
     <Routes>
       <Route 
         path="/"
         element={user ? (userType === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/citizen" />) : <Navigate to="/login" />}
       />
-      <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage setUserType={setUserType} />} />
+      <Route path="/login" element={user ? <Navigate to="/" /> : <LoginPage setUserType={usertype => setUserState(s => ({ ...s, userType: usertype }))} />} />
       <Route path="/create-user" element={user ? <Navigate to="/" /> : <CreateUserPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/admin" element={user ? <AdminPage /> : <Navigate to="/login" />} />
