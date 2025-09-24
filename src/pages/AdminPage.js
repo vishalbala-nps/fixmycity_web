@@ -1,6 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, Stack } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import HourglassTopIcon from '@mui/icons-material/HourglassTop';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import axios from 'axios';
@@ -22,20 +25,11 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
+  const [statusLoading, setStatusLoading] = useState(false);
 
-  useEffect(() => {
-    // Optionally get admin's location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setPosition([pos.coords.latitude, pos.coords.longitude]);
-        },
-        () => {
-          setPosition(defaultCenter);
-        }
-      );
-    }
-    // Fetch all issues with admin bearer token from localStorage
+  // Fetch issues logic as a function so we can refresh after status change
+  const fetchIssues = () => {
+    setLoading(true);
     const admintoken = localStorage.getItem('admintoken');
     axios.get(process.env.REACT_APP_BACKEND_URL + '/api/admin/issue', {
       headers: admintoken ? { Authorization: `Bearer ${admintoken}` } : {}
@@ -47,7 +41,42 @@ const AdminPage = () => {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setPosition([pos.coords.latitude, pos.coords.longitude]);
+        },
+        () => {
+          setPosition(defaultCenter);
+        }
+      );
+    }
+    fetchIssues();
   }, []);
+
+  // Handler to change status
+  const handleStatusChange = (status) => {
+    if (!selectedIssue) return;
+    setStatusLoading(true);
+    const admintoken = localStorage.getItem('admintoken');
+    axios.patch(
+      process.env.REACT_APP_BACKEND_URL + `/api/admin/issue/${selectedIssue.id}/status`,
+      { status },
+      { headers: admintoken ? { Authorization: `Bearer ${admintoken}` } : {} }
+    )
+      .then(() => {
+        setModalOpen(false);
+        setSelectedIssue(null);
+        fetchIssues();
+      })
+      .catch(() => {
+        // Optionally show error
+      })
+      .finally(() => setStatusLoading(false));
+  };
 
   const handleLogout = () => {
     signOut(auth);
@@ -143,8 +172,43 @@ const AdminPage = () => {
                       {selectedIssue.count !== undefined && (
                         <Typography variant="body1" mb={1}><b>Reported By:</b> {selectedIssue.count} people</Typography>
                       )}
+                      <Stack direction="column" spacing={0.5} mt={1} mb={2}>
+                        <Button
+                          onClick={() => handleStatusChange('in progress')}
+                          color="info"
+                          variant="contained"
+                          disabled={statusLoading}
+                          startIcon={<HourglassTopIcon />}
+                          sx={{ borderRadius: 2, fontWeight: 500, fontSize: 13, py: 0.7, minHeight: 32, minWidth: 0 }}
+                          fullWidth
+                        >
+                          In Progress
+                        </Button>
+                        <Button
+                          onClick={() => handleStatusChange('rejected')}
+                          color="error"
+                          variant="contained"
+                          disabled={statusLoading}
+                          startIcon={<CancelIcon />}
+                          sx={{ borderRadius: 2, fontWeight: 500, fontSize: 13, py: 0.7, minHeight: 32, minWidth: 0 }}
+                          fullWidth
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          onClick={() => handleStatusChange('complete')}
+                          color="success"
+                          variant="contained"
+                          disabled={statusLoading}
+                          startIcon={<CheckCircleIcon />}
+                          sx={{ borderRadius: 2, fontWeight: 500, fontSize: 13, py: 0.7, minHeight: 32, minWidth: 0 }}
+                          fullWidth
+                        >
+                          Complete
+                        </Button>
+                      </Stack>
                       <Box display="flex" justifyContent="flex-end" mt={2}>
-                        <Button onClick={() => setModalOpen(false)} variant="contained">Close</Button>
+                        <Button onClick={() => setModalOpen(false)} variant="outlined">Close</Button>
                       </Box>
                     </>
                   )}
