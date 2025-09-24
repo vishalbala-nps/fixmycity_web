@@ -225,7 +225,7 @@ const AdminPage = () => {
                           onClick={() => handleStatusChange('progress')}
                           color="info"
                           variant="contained"
-                          disabled={statusLoading || selectedIssue.status === 'complete'}
+                          disabled={statusLoading || selectedIssue.status === 'complete' || selectedIssue.status === 'progress'}
                           startIcon={<HourglassTopIcon />}
                           sx={{ borderRadius: 2, fontWeight: 500, fontSize: 13, py: 0.7, minHeight: 32, minWidth: 0 }}
                           fullWidth
