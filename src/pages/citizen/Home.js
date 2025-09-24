@@ -142,7 +142,7 @@ const Home = () => {
       </Box>
       <Box mt={0} mb={0} position="relative" width="100%" height="75vh">
         <Box position="relative" width="100%" height="100%" sx={mapStyle}>
-           <MapContainer center={position} zoom={12} style={{ width: '100%', height: '100%', borderRadius: '16px' }} scrollWheelZoom={true} key={position.join(',')}>
+           <MapContainer center={position} zoom={14} style={{ width: '100%', height: '100%', borderRadius: '16px' }} scrollWheelZoom={true} key={position.join(',')}>
              <TileLayer
                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
