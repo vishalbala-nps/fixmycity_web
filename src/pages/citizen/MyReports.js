@@ -14,7 +14,9 @@ import {
   TableRow,
   Paper,
   CircularProgress,
-  Chip
+  Chip,
+  Modal,
+  Button
 } from '@mui/material';
 
 const statusColor = (status) => {
@@ -23,10 +25,25 @@ const statusColor = (status) => {
   return 'warning';
 };
 
+const modalStyle = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 350,
+  bgcolor: 'background.paper',
+  border: '2px solid #1976d2',
+  boxShadow: 24,
+  p: 4,
+  borderRadius: 2,
+};
+
 const MyReports = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedResolved, setSelectedResolved] = useState(null);
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -81,22 +98,60 @@ const MyReports = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {reports.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell>{dayjs(r.dateofreport).format('DD MMM YYYY')}</TableCell>
-                  <TableCell>{r.category}</TableCell>
-                  <TableCell>{r.description}</TableCell>
-                  <TableCell>{r.department}</TableCell>
-                  <TableCell>
-                    <Chip label={r.status === 'complete' ? 'Complete' : r.status === 'in progress' ? 'In Progress' : 'Submitted'} color={statusColor(r.status)} size="small" />
-                  </TableCell>
-                  <TableCell>{r.count}</TableCell>
-                </TableRow>
-              ))}
+              {reports.map((r) => {
+                const isResolved = r.status === 'complete' && r.resolved;
+                return (
+                  <TableRow
+                    key={r.id}
+                    hover={!!isResolved}
+                    style={isResolved ? { cursor: 'pointer' } : {}}
+                    onClick={() => {
+                      if (isResolved) {
+                        setSelectedResolved(r.resolved);
+                        setModalOpen(true);
+                      }
+                    }}
+                  >
+                    <TableCell>{dayjs(r.dateofreport).format('DD MMM YYYY')}</TableCell>
+                    <TableCell>{r.category}</TableCell>
+                    <TableCell>{r.description}</TableCell>
+                    <TableCell>{r.department}</TableCell>
+                    <TableCell>
+                      <Chip label={r.status === 'complete' ? 'Complete' : r.status === 'in progress' ? 'In Progress' : 'Submitted'} color={statusColor(r.status)} size="small" />
+                    </TableCell>
+                    <TableCell>{r.count}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
       )}
+
+      {/* Resolved Issue Modal */}
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+        <Box sx={modalStyle}>
+          <Typography variant="h6" mb={2} fontWeight={600} align="center">Resolution Details</Typography>
+          {selectedResolved && (
+            <>
+              <Typography variant="body1" mb={1}><b>Date of Completion:</b> {selectedResolved.dateofresolution ? dayjs(selectedResolved.dateofresolution).format('DD MMM YYYY') : '-'}</Typography>
+              {selectedResolved.image && (
+                <Box mb={2} display="flex" justifyContent="center">
+                  <img
+                    src={`${process.env.REACT_APP_BACKEND_URL}/api/image/${selectedResolved.image}`}
+                    alt="Resolved"
+                    style={{ maxWidth: 180, maxHeight: 120, borderRadius: 6, border: '1px solid #1976d2' }}
+                  />
+                </Box>
+              )}
+              <Typography variant="body2" mb={2}><b>Remarks:</b> {selectedResolved.remarks || '-'}</Typography>
+              <Box display="flex" justifyContent="flex-end">
+                <Button onClick={() => setModalOpen(false)} variant="contained">Close</Button>
+              </Box>
+            </>
+          )}
+        </Box>
+      </Modal>
     </Box>
   );
 };
