@@ -166,7 +166,7 @@ const Home = () => {
                {markers.map((issue, idx) => {
                  let icon = submittedIcon;
                  console.log(issue)
-                 if (issue.status === 'in progress') icon = inProgressIcon;
+                 if (issue.status === 'progress') icon = inProgressIcon;
                  else if (issue.status === 'complete') icon = completeIcon;
                  return (
                    <Marker key={issue.id || idx} position={[issue.lat, issue.lon]} icon={icon}>
@@ -182,7 +182,7 @@ const Home = () => {
                        <b>Category:</b> {issue.category}<br/>
                        <b>Description:</b> {issue.description}<br/>
                        <b>Department:</b> {issue.department}<br/>
-                       <b>Status:</b> {issue.status === 'submitted' ? 'Submitted' : issue.status === 'in progress' ? 'In Progress' : issue.status === 'complete' ? 'Complete' : issue.status}<br/>
+                       <b>Status:</b> {issue.status === 'submitted' ? 'Submitted' : issue.status === 'progress' ? 'In Progress' : issue.status === 'complete' ? 'Complete' : issue.status}<br/>
                        <b>Date:</b> {issue.dateofreport ? dayjs(issue.dateofreport).format('DD MMM YYYY') : ''}<br/>
                        {issue.count !== undefined && (
                          <>
