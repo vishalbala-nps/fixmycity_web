@@ -1,25 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import Modal from '@mui/material/Modal';
 
 
 import axios from 'axios';
 
+
 const CompleteIssueModal = ({ open, onClose, image, setImage, remark, setRemark, reportId, afterSubmit }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const remarkRef = useRef(null);
 
   const handleSubmit = async () => {
-    if (!image || !remark.trim() || !reportId) return;
+    const remarkValue = remarkRef.current ? remarkRef.current.value : '';
+    if (!image || !remarkValue.trim() || !reportId) return;
     setLoading(true);
     setError('');
     try {
       const admintoken = localStorage.getItem('admintoken');
       const formData = new FormData();
       formData.append('report', reportId);
-      formData.append('status', 'complete');
+  formData.append('status', 'complete');
       formData.append('image', image);
-      formData.append('remarks', remark);
+      formData.append('remarks', remarkValue);
       await axios.post(
         process.env.REACT_APP_BACKEND_URL + '/api/admin/issue',
         formData,
@@ -72,8 +75,8 @@ const CompleteIssueModal = ({ open, onClose, image, setImage, remark, setRemark,
         </Box>
         <Box mb={2}>
           <textarea
-            value={remark}
-            onChange={e => setRemark(e.target.value)}
+            ref={remarkRef}
+            defaultValue={remark}
             placeholder="Enter remarks (required)"
             rows={3}
             style={{ width: '100%', borderRadius: 6, border: '1px solid #ccc', padding: 8, fontSize: 14 }}
@@ -86,7 +89,7 @@ const CompleteIssueModal = ({ open, onClose, image, setImage, remark, setRemark,
           color="success"
           fullWidth
           sx={{ borderRadius: 2, fontWeight: 600, fontSize: 15, py: 1 }}
-          disabled={!image || !remark.trim() || loading}
+          disabled={!image || !remarkRef.current || !remarkRef.current.value.trim() || loading}
           onClick={handleSubmit}
         >
           {loading ? 'Submitting...' : 'Submit'}
