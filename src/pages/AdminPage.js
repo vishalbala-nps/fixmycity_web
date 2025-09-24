@@ -250,6 +250,15 @@ const AdminPage = () => {
                 setImage={setCompleteImage}
                 remark={completeRemark}
                 setRemark={setCompleteRemark}
+                reportId={selectedIssue ? selectedIssue.id : ''}
+                afterSubmit={() => {
+                  setCompleteModalOpen(false);
+                  setModalOpen(false);
+                  setSelectedIssue(null);
+                  setCompleteImage(null);
+                  setCompleteRemark('');
+                  fetchIssues();
+                }}
               />
                       </Stack>
                       <Box display="flex" justifyContent="flex-end" mt={2}>
