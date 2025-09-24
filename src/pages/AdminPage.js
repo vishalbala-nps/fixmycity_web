@@ -15,6 +15,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import dayjs from 'dayjs';
 import Modal from '@mui/material/Modal';
+import CompleteIssueModal from './CompleteIssueModal';
 
 
 const defaultCenter = [12.9716, 77.5946]; // Bangalore
@@ -31,6 +32,9 @@ const AdminPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [completeModalOpen, setCompleteModalOpen] = useState(false);
+  const [completeImage, setCompleteImage] = useState(null);
+  const [completeRemark, setCompleteRemark] = useState('');
 
   // Fetch issues logic as a function so we can refresh after status change
   const fetchIssues = () => {
@@ -229,7 +233,7 @@ const AdminPage = () => {
                           In Progress
                         </Button>
                         <Button
-                          onClick={() => handleStatusChange('complete')}
+                          onClick={() => setCompleteModalOpen(true)}
                           color="success"
                           variant="contained"
                           disabled={statusLoading}
@@ -239,6 +243,14 @@ const AdminPage = () => {
                         >
                           Complete
                         </Button>
+              <CompleteIssueModal
+                open={completeModalOpen}
+                onClose={() => setCompleteModalOpen(false)}
+                image={completeImage}
+                setImage={setCompleteImage}
+                remark={completeRemark}
+                setRemark={setCompleteRemark}
+              />
                       </Stack>
                       <Box display="flex" justifyContent="flex-end" mt={2}>
                         <Button onClick={() => setModalOpen(false)} variant="outlined">Close</Button>
