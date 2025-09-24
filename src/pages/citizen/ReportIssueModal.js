@@ -373,8 +373,8 @@ const ReportIssueModal = ({ open, onClose, currentLocation, onIssueSubmitted }) 
                   </MapContainer>
                 </Box>
 
-                {/* Description */}
-                <Box mb={1.5}>
+                {/* Description with inline VoiceToText button */}
+                <Box mb={fieldsEditable ? 2 : 1.5} display="flex" alignItems="flex-start">
                   <TextField
                     label="Description"
                     multiline
@@ -384,15 +384,11 @@ const ReportIssueModal = ({ open, onClose, currentLocation, onIssueSubmitted }) 
                     onChange={(e) => setDescription(e.target.value)}
                     sx={{ background: '#f5f5f5', borderRadius: 1 }}
                     disabled={!fieldsEditable}
+                    InputProps={{
+                      endAdornment: fieldsEditable ? <VoiceToText onResult={handleVoiceResult} /> : null,
+                    }}
                   />
                 </Box>
-
-                {/* ✅ Voice-to-Text appears only after AI makes fields editable */}
-                {fieldsEditable && (
-                  <Box mb={2}>
-                    <VoiceToText onResult={handleVoiceResult} />
-                  </Box>
-                )}
 
                 {/* Category & Department */}
                 <Box mb={1.5} display="flex" gap={2}>

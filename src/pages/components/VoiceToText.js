@@ -1,7 +1,9 @@
 
 import React from "react";
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
-import { Box, Button, Typography } from '@mui/material';
+import { IconButton, Tooltip, CircularProgress } from '@mui/material';
+import KeyboardVoiceIcon from '@mui/icons-material/KeyboardVoice';
+import StopCircleIcon from '@mui/icons-material/StopCircle';
 
 const VoiceToText = ({ onResult }) => {
   const {
@@ -12,7 +14,7 @@ const VoiceToText = ({ onResult }) => {
   } = useSpeechRecognition();
 
   if (!browserSupportsSpeechRecognition) {
-    return <Typography color="error">Browser does not support speech recognition.</Typography>;
+    return null;
   }
 
   const handleStop = () => {
@@ -24,35 +26,21 @@ const VoiceToText = ({ onResult }) => {
   };
 
   return (
-    <Box p={2} borderRadius={2} boxShadow={2} bgcolor="#fff" display="flex" flexDirection="column" alignItems="center" gap={2}>
-      <Typography color="text.secondary">
-        🎤 {listening ? "Listening..." : "Click 'Add Voice Note' to start"}
-      </Typography>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={() => SpeechRecognition.startListening({ continuous: true, language: "en-IN" })}
-        disabled={listening}
-        sx={{ borderRadius: 2, fontWeight: 500, fontSize: 15, px: 3, py: 1 }}
-      >
-        Add Voice Note
-      </Button>
-      {listening && (
-        <Button
-          variant="contained"
-          color="error"
-          onClick={handleStop}
-          sx={{ borderRadius: 2, fontWeight: 500, fontSize: 15, px: 3, py: 1 }}
-        >
-          Stop & Add
-        </Button>
+    <>
+      {listening ? (
+        <Tooltip title="Stop & Add Voice Note">
+          <IconButton color="error" size="small" onClick={handleStop} sx={{ ml: 1 }}>
+            <StopCircleIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      ) : (
+        <Tooltip title="Add Voice Note">
+          <IconButton color="primary" size="small" onClick={() => SpeechRecognition.startListening({ continuous: true, language: "en-IN" })} sx={{ ml: 1 }}>
+            <KeyboardVoiceIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       )}
-      {transcript && (
-        <Typography color="text.secondary" fontSize={13} fontStyle="italic">
-          Current voice note: {transcript}
-        </Typography>
-      )}
-    </Box>
+    </>
   );
 };
 
